@@ -1,7 +1,6 @@
 // Разлогин
 const logoutBtn = new LogoutButton();
 logoutBtn.action = () => ApiConnector.logout(response=>{
-    console.log('logout')
     if(response.success){
         location.reload();
     }
@@ -14,46 +13,50 @@ ApiConnector.current(response=>{
     }
 });
 
+
 // Получение текущих курсов валюты
-const rates = new RatesBoard();
-setInterval( ApiConnector.getStocks(response => {
+const ratesObj = new RatesBoard();
+const refreshCurrencies = () => ApiConnector.getStocks(response => {
     if(response.success){
-        rates.clearTable();
-        rates.fillTable(response.data);
+        ratesObj.clearTable();
+        ratesObj.fillTable(response.data);
     }
-}), 1000*60);
+});
+refreshCurrencies();
+setInterval(refreshCurrencies, 1000*60);
+
 
 // Операции с деньгами
-const MM = new MoneyManager();
+const moneyManagerObj = new MoneyManager();
 // пополнение
-MM.addMoneyCallback = (data) => ApiConnector.addMoney(data, response=>{
+moneyManagerObj.addMoneyCallback = (data) => ApiConnector.addMoney(data, response=>{
     let {success,error = "Пополнение совершено успешно"} = response;
     if(success){
         ProfileWidget.showProfile(response.data);
     }
-    MM.setMessage(success,error);
+    moneyManagerObj.setMessage(success,error);
 });
 
 // конвертация
-MM.conversionMoneyCallback = data => ApiConnector.convertMoney(data,response=>{
+moneyManagerObj.conversionMoneyCallback = data => ApiConnector.convertMoney(data,response=>{
     let {success, error="Конвертация успешно произведена"} = response;
     if(success){
         ProfileWidget.showProfile(response.data);
     }
-    MM.setMessage(success,error);
+    moneyManagerObj.setMessage(success,error);
 });
 
 // перевод
-MM.sendMoneyCallback = data => ApiConnector.transferMoney(data,response=>{
+moneyManagerObj.sendMoneyCallback = data => ApiConnector.transferMoney(data,response=>{
     let {success, error="Перевод успешно произведен"} = response;
     if(success){
         ProfileWidget.showProfile(response.data);
     }
-    MM.setMessage(success,error);
+    moneyManagerObj.setMessage(success,error);
 });
 
 // Работа с избранным
-const fav = new FavoritesWidget();
+const favoritesObj = new FavoritesWidget();
 // получение избранного
 ApiConnector.getFavorites(response=>{
     if(response.success){
@@ -62,26 +65,26 @@ ApiConnector.getFavorites(response=>{
 });
 
 // добавление в избранное
-fav.addUserCallback = data => ApiConnector.addUserToFavorites(data, response => {
+favoritesObj.addUserCallback = data => ApiConnector.addUserToFavorites(data, response => {
     let {success, error="Избранный пользователь успешно добавлен"} = response;
     if(success){
         refreshFav(response.data);
     }
-    fav.setMessage(success,error);
+    favoritesObj.setMessage(success,error);
 });
 
 // удаление из избранного
-fav.removeUserCallback = data => ApiConnector.removeUserFromFavorites(data, response => {
+favoritesObj.removeUserCallback = data => ApiConnector.removeUserFromFavorites(data, response => {
     let {success, error="Избранный пользователь успешно удалён"} = response;
     if(success){
         refreshFav(response.data);
     }
-    fav.setMessage(success,error);
+    favoritesObj.setMessage(success,error);
 });
 
 // функция для обновления списка и селекта избранного
 function refreshFav(data){
-    fav.clearTable();
-    fav.fillTable(data);
-    MM.updateUsersList(data);
+    favoritesObj.clearTable();
+    favoritesObj.fillTable(data);
+    moneyManagerObj.updateUsersList(data);
 }
